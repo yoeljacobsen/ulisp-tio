@@ -1,17 +1,65 @@
 # uLisp for terminals (ulisp-tio)
 
-A version of [uLisp](http://www.ulisp.com) ESP Release 4.9b for ESP32 boards that you use from a
-terminal program such as `tio`, `picocom`, `minicom` or `screen`. It adds:
+A version of [uLisp](http://www.ulisp.com) ESP Release 4.9b for ESP32 boards, changed so that
+you can write, edit, run and save programs **entirely on the board**, from a terminal program such
+as `tio`, `picocom`, `minicom` or `screen`.
 
-- a **line editor** at the REPL prompt (arrow keys, history, completion, multi-line input)
-- a **full-screen editor**, `ed`, for definitions and files
-- **flash files**: `load`, `delete-file`, `directory`, file streams with `with-sd-card`, and an
-  autorun file loaded at startup
-- **file transfer** between the computer and the flash with YMODEM, built into `tio`
-- a **bigger stack**, so recursive functions can go about 500 levels deep instead of about 80
+> **Based on uLisp by David Johnson-Davies.** uLisp is a Lisp for microcontrollers, with
+> versions for many boards, a large library of examples and full documentation at
+> [www.ulisp.com](http://www.ulisp.com). The language, the interpreter, the garbage collector and
+> nearly all of the code in `ulisp-tio.ino` are his work, from the ESP Release 4.9b sketch
+> (14th May 2026). This project only adds a terminal front end and file handling around it.
+> If you want the official, supported uLisp, get it from the
+> [uLisp download page](http://www.ulisp.com). Please don't report problems with this version to
+> the uLisp project.
 
-Everything else is standard uLisp 4.9b. The original sketch is available from the
-[uLisp download page](http://www.ulisp.com).
+## Why: on-device, retro-style development
+
+Home computers of the late 1970s and 1980s booted straight into a language. You typed a line,
+it ran, you edited a definition, saved it to tape or disk, and the machine was the whole
+development environment. An ESP32 has far more memory and speed than those machines, and uLisp
+already gives it an interactive language, but stock uLisp is designed to be used through the
+Arduino IDE's Serial Monitor: you type a line into a box, you can't move the cursor or recall
+earlier lines, and anything longer than a few lines is written on the computer and pasted in.
+Programs live on the computer, not on the board.
+
+This version aims for the other model: **the board is the computer, and the terminal is its
+screen and keyboard.** Plug it in, open `tio`, and everything you need is on the device:
+
+- a REPL with a proper **line editor**, the way a shell or a BASIC prompt works
+- a **full-screen editor**, `ed`, for functions, variables and files, which saves to the
+  board's own flash and evaluates the code when you leave it
+- **files on the flash** to keep programs in, `load` them, and an autorun file, so the board
+  starts up with your program the way a ROM cartridge or boot disk would
+- **Ctrl-C** to stop a runaway program, as on most systems
+
+The computer is only a terminal. It can also be the "disk drive": YMODEM, the protocol used by
+modems and bulletin boards, copies files between it and the board reliably, which pasting into
+an editor never quite is.
+
+## What changed
+
+- **Terminal input that works.** `tio` and other terminals send CR for Enter, which stock uLisp
+  doesn't treat as a newline. CR, LF and CRLF are all accepted, and the serial speed is 115200,
+  `tio`'s default.
+- **Line editor** at the REPL prompt: cursor keys, Home/End, word moves, kill and yank, history,
+  tab completion of symbol names, matching-paren highlighting, multi-line input that waits for
+  closing parens and indents continuation lines.
+- **`ed`, a full-screen editor** for a function or variable (`(ed 'name)`), a flash file
+  (`(ed "file.lsp")`), or a scratch buffer (`(ed)`). Arrays such as a 9x9 board are laid out one
+  row per line. It uses the terminal's alternate screen, so your REPL session is back when you
+  leave.
+- **Flash files**: `load`, `delete-file`, `directory`, and `with-sd-card` streams on the flash
+  (LittleFS) when there is no SD card. `/autorun.lsp` is loaded at startup.
+- **YMODEM transfer**: `(ymodem-receive)` and `(ymodem-send "file")`, which work with `tio`'s
+  built-in sender and with lrzsz.
+- **Pasting** is reliable: bracketed paste mode stops pasted code being re-indented, and a 2
+  Kbyte receive buffer plus a type-ahead buffer keep keys typed while a program runs.
+- **A bigger stack** (48 Kbytes instead of 8), so recursive functions can go about 500 levels
+  deep instead of about 80.
+
+Everything else is standard uLisp 4.9b: the same language, functions and documentation. See
+[Differences from stock uLisp](#differences-from-stock-ulisp) for a table.
 
 ---
 
